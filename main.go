@@ -10,8 +10,6 @@ import (
 
 func main() {
 
-	// ! KURANG TAMBAH/UBAH LOGO WEB TAB
-
 	engine := html.New("./web/views", ".html")
 
 	app := fiber.New(fiber.Config{
