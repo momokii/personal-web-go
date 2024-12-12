@@ -1,50 +1,42 @@
-# syntax=docker/dockerfile:1
+# Gunakan argumen untuk versi Go yang fleksibel
+ARG GO_VERSION=1.21.5
 
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Dockerfile reference guide at
-# https://docs.docker.com/engine/reference/builder/
+# Stage Build: Kompilasi Aplikasi
+# Menggunakan alpine variant dari image Go untuk ukuran yang minimal
+FROM golang:${GO_VERSION}-alpine AS build
 
-################################################################################
-# Create a stage for building the application.
-ARG GO_VERSION=1.21.0
-FROM golang:${GO_VERSION} AS build
+# Set working directory di dalam container
 WORKDIR /src
 
-# Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /go/pkg/mod/ to speed up subsequent builds.
-# Leverage bind mounts to go.sum and go.mod to avoid having to copy them into
-# the container.
-RUN --mount=type=cache,target=/go/pkg/mod/ \
-    --mount=type=bind,source=go.sum,target=go.sum \
-    --mount=type=bind,source=go.mod,target=go.mod \
-    go mod download -x
+# Salin file dependensi terlebih dahulu untuk optimasi caching
+# Dengan cara ini, jika hanya source code yang berubah, 
+# dependensi tidak perlu di-download ulang
+COPY go.mod go.sum ./
 
-# Copy the rest of the source code
+# Download semua dependensi projekt
+# Perintah ini akan membaca go.mod dan go.sum untuk resolusi dependensi
+RUN go mod download
+
+# Salin seluruh source code projekt
 COPY . .
 
-# Build the application.
-# Leverage a cache mount to /go/pkg/mod/ to speed up subsequent builds.
-# Leverage a bind mount to the current directory to avoid having to copy the
-# source code into the container.
+# Build aplikasi dengan konfigurasi optimasi
+# - Gunakan cache untuk mempercepat proses build
+# - CGO_ENABLED=0 untuk static binary
+# - GOOS=linux dan GOARCH=amd64 untuk kompatibilitas
+# - ldflags untuk mengurangi ukuran binary dan menghilangkan debug info
 RUN --mount=type=cache,target=/go/pkg/mod/ \
-    --mount=type=bind,target=. \
-    CGO_ENABLED=0 go build -o /bin/server .
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -ldflags="-s -w" -o /bin/server .
 
-################################################################################
-# Create a new stage for running the application that contains the minimal
-# runtime dependencies for the application. This often uses a different base
-# image from the build stage where the necessary files are copied from the build
-# stage.
-#
-# The example below uses the alpine image as the foundation for running the app.
-# By specifying the "latest" tag, it will also use whatever happens to be the
-# most recent version of that image when you build your Dockerfile. If
-# reproducability is important, consider using a versioned tag
-# (e.g., alpine:3.17.2) or SHA (e.g., alpine@sha256:c41ab5c992deb4fe7e5da09f67a8804a46bd0592bfdf0b1847dde0e0889d2bff).
-FROM alpine:latest AS final
+# Stage Akhir: Container Minimal untuk Eksekusi
+# Gunakan Alpine Linux sebagai base image produksi
+FROM alpine:3.21 AS final
 
-# Install any runtime dependencies that are needed to run your application.
-# Leverage a cache mount to /var/cache/apk/ to speed up subsequent builds.
+# Instal dependensi runtime yang diperlukan
+# - ca-certificates: Untuk koneksi HTTPS yang aman
+# - tzdata: Untuk manajemen zona waktu
+# Gunakan mount cache untuk mempercepat instalasi paket
 RUN --mount=type=cache,target=/var/cache/apk \
     apk --update add \
         ca-certificates \
@@ -52,8 +44,8 @@ RUN --mount=type=cache,target=/var/cache/apk \
         && \
         update-ca-certificates
 
-# Create a non-privileged user that the app will run under.
-# See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
+# Buat user non-privileged untuk menjalankan aplikasi
+# Praktik keamanan: Hindari menjalankan aplikasi sebagai root
 ARG UID=10001
 RUN adduser \
     --disabled-password \
@@ -63,14 +55,29 @@ RUN adduser \
     --no-create-home \
     --uid "${UID}" \
     appuser
+
+# Beralih ke user non-privileged
 USER appuser
 
-# Copy the executable from the "build" stage.
-COPY --from=build /bin/server /bin/
+# Salin artifact dari stage build
+# - Binary utama aplikasi
+# - Folder web/static jika diperlukan
+COPY --from=build /bin/server /bin
 COPY --from=build /src/web /web
 
-# Expose the port that the application listens on.
-EXPOSE 3000
+# Tambahkan Health Check
+# Periksa status aplikasi setiap 30 detik
+# Timeout 10 detik untuk response
+# 3 percobaan gagal akan dianggap tidak sehat
+# Asumsikan aplikasi memiliki endpoint /health
+# HEALTHCHECK --interval=30s \
+#             --timeout=10s \
+#             --start-period=5s \
+#             --retries=3 \
+#             CMD wget -q --spider http://localhost:3000 || exit 1
 
-# What the container should run when it is started.
-ENTRYPOINT [ "/bin/server" ]
+# Ekspos port yang digunakan aplikasi
+EXPOSE 3001 3002
+
+# Definisikan entrypoint untuk menjalankan server
+ENTRYPOINT ["/bin/server"]

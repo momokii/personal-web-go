@@ -14,4 +14,9 @@ Feel free to explore, suggest improvements, or use it as inspiration for your ow
    ```bash
    go run main.go
    ```  
-3. Access the website at `http://localhost:3000` (or the specified port).  
+3. Access the website **at** `http://localhost:3002` (or the specified port for app/web).
+4. Access the prometheus exporter **at** `http://localhost:3002` (or the specified port for exporte).   
+
+
+***Notes***
+you can use compose.yaml for setup/run with prometheus and grafana on one run. 
