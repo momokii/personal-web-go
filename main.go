@@ -15,14 +15,33 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/template/html/v2"
-	"github.com/momokii/personal-web-go/pkg/medium"
+	"github.com/momokii/go-llmbridge/pkg/openai"
+	"github.com/momokii/personal-web-go/internal/handlers"
 	"github.com/momokii/personal-web-go/pkg/monitoring"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
+	// openai client
+	openaiClient, err := openai.New(
+		os.Getenv("OPENAI_API_KEY"),
+		"",
+		"",
+		openai.WithModel(os.Getenv("OPENAI_MODEL_NAME")),
+	)
+	if err != nil {
+		log.Println("Error creating OpenAI client: ", err)
+		return
+	} else {
+		log.Println("OpenAI client created")
+	}
+
+	// handler init
+	dashboardHandler := handlers.NewDashboardHandler(openaiClient)
 
 	// setup prometheus server
 	promReg := prometheus.NewRegistry()
@@ -56,27 +75,8 @@ func main() {
 	app.Use(PromMiddleware(*promMetrics))
 	app.Static("/web", "./web")
 
-	app.Get("/", func(c *fiber.Ctx) error {
-
-		mediumData := []medium.Medium{}
-
-		// get medium data
-		mediumRes, err := medium.GetMediumProfileData("kelanach")
-		if err != nil {
-			return c.Render("index", fiber.Map{
-				"Medium": []medium.Medium{},
-			})
-		}
-
-		if len(mediumRes.DataMedium) != 0 {
-			// get just 6 data
-			mediumData = mediumRes.DataMedium[:6]
-		}
-
-		return c.Render("index", fiber.Map{
-			"Medium": mediumData,
-		})
-	})
+	app.Get("/", dashboardHandler.DashboardView)
+	app.Post("/api/bot", dashboardHandler.ChatBotMessages)
 
 	// setup paralel port for app and prometheus exporter
 	// gracefull shutdown
@@ -88,6 +88,8 @@ func main() {
 	go func() {
 		<-sig
 		log.Println("Shutting down app")
+		log.Println("Waiting 5 second for all request to finish")
+		time.Sleep(5 * time.Second)
 		cancel()
 	}()
 

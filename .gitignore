@@ -1,6 +1,7 @@
 cloudbuild.yaml 
 .dockerignore
 .air.toml
+.env
 
 # folder
 tmp
