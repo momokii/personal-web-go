@@ -49,7 +49,16 @@ Soft Skills               Technical Writing, Project Management, Team Collaborat
 ### Experience
 **PT Protergo Siber Sekuriti** (Technical Writer Intern)  
 Jan 2025 – Present, Jakarta_ 
-- Author API docs and internal guides; translate specs into clear user‑friendly content.  
+● Organized and documented weekly team meetings and crafted concise bi‐weekly slide decks to summarize key
+activities, milestones, and action items.
+● Maintained and updated application documentation, including user guides, product overviews, and technical manuals,
+to ensure alignment with the latest software releases.
+● Product & Technology Research: Conducted in-depth research on new product features (e.g., AI integrations) and
+strategic tooling. This involved mapping possible user flows, evaluating security scanners (e.g., Semgrep, Nuclei) via
+comparative analysis, and compiling all findings into clear, discussion-ready briefs for cross-functional teams.
+● Custom Tooling & Automation: Developed bespoke Python tools to solve operational challenges, including a
+threat-intelligence scanner using the VirusTotal API and a custom API proxy to resolve a critical SMTP connectivity
+issue for internal services.
 
 **PT Moladin Digital Indonesia** (SDET Intern)  
 Feb 2024 – May 2024, Jakarta_ 
@@ -76,6 +85,10 @@ This experience not only allowed me to contribute to the technical aspects of th
 ### Projects
 - **Fruitarians**: GCP‑deployed mobile marketplace with ML‑driven freshness detection.  
 - **Equisafe**: Disaster‑literacy app APIs for special‑needs children (Node.js, MongoDB, GCP).  
+
+- **Codecheck**: A powerful desktop application that integrates Semgrep's analysis engine into local development workflows, enabling developers to scan code, find vulnerabilities, and track improvements before committing changes.
+Repo: github.com/momokii/go-codecheck
+Live: codecheck.kelanach.xyz
 
 - **Echo Notes**: Innovative web application that redefines meeting management. This solution seamlessly records live meetings with crystal-clear audio, leveraging LLM-based speech-to-text technology (Whisper) for precise transcription. It then utilizes advanced GPT-series models to generate intelligent, concise summaries—ensuring that every key insight is captured effortlessly.
 Built with a robust backend powered by Golang Fiber, the application delivers exceptional performance and scalability. The user experience is streamlined with a simple yet effective front-end, crafted using jQuery, HTML, and Bootstrap, while Postgresql underpins the data management, ensuring reliability and data integrity.  
