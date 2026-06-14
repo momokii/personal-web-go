@@ -730,7 +730,7 @@
                 <div class="w-24 h-1 bg-gradient mx-auto"></div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-justify">
                 <!-- Professional Experience -->
                 <div class="bg-white rounded-lg shadow-md p-8">
                     <h3 class="text-2xl font-semibold mb-6 flex items-center">
@@ -747,11 +747,19 @@
                             <ul class="space-y-2 text-gray-600">
                                 <li class="flex">
                                     <i class="fas fa-check-circle text-primary-600 mt-1 mr-2"></i>
-                                    <span>Doing End to End from Design, Development, and Deployment for some POC App</span>
+                                    <span><b>Architecture Modernization & Single Source of Truth (SSOT):</b> Redesigned the SOAR automation architecture by repositioning the low-code platform purely as a workflow proxy. By shifting 100% of log visibility and Environment Variable (ENV) controls back to the main application, the team achieved a true SSOT. This architectural pivot reduced complex operational monitoring and cut error investigation times by 50%.</span>
                                 </li>
                                 <li class="flex">
                                     <i class="fas fa-check-circle text-primary-600 mt-1 mr-2"></i>
-                                    <span>Migrate automation tool to N8N for better performance and maintenance</span>
+                                    <span><b>Infrastructure Efficiency & Migration:</b> Successfully migrated legacy automation tools (Shuffle) to a self-hosted n8n environment. Engineered a "one-click" setup script that seamlessly loads predefined workflows. This optimization reduced the recommended production infrastructure by 50% (scaling down from 4 vCPU/8GB to 2 vCPU/4GB) while maximizing open-source community tools to achieve zero licensing costs.</span>
+                                </li>
+                                <li class="flex">
+                                    <i class="fas fa-check-circle text-primary-600 mt-1 mr-2"></i>
+                                    <span><b>Centralized Security Data & 100% Dev Load Reduction:</b> Developed an "EDL Formatter" API designed for flexible SOAR processing. Instead of hardcoding bespoke integrations for each client's firewall ecosystem, this API serves as a unified IOC database. It provides flexible payloads (JSON/Text) backed by comprehensive documentation, effectively reducing per-client integration development by 100%.</span>
+                                </li>
+                                <li class="flex">
+                                    <i class="fas fa-check-circle text-primary-600 mt-1 mr-2"></i>
+                                    <span><b>Zero-Cost Operational Integrations:</b> Architected a centralized IP Reputation Database integrating APIVoid, VirusTotal, and AbuseIPDB. Additionally, deployed the open-source WAHA (WhatsApp API) for system alerts, completely eliminating legacy reliance on paid 3rd-party notification subscriptions and driving operational costs down to zero.</span>
                                 </li>
                             </ul>
                         </div>
