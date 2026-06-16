@@ -602,36 +602,60 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
         }
 
-        #np-widget .np-detail-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: .68rem;
-            padding: 4px 0;
-            gap: 8px;
+        /* mini-list sections inside expand panel */
+        #np-widget .np-list-section + .np-list-section {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(0, 0, 0, .06);
         }
 
-        #np-widget .np-detail-label {
+        #np-widget .np-list-title {
+            display: block;
+            font-size: .58rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em;
             color: #9ca3af;
-            flex-shrink: 0;
+            margin-bottom: 4px;
         }
 
-        #np-widget .np-detail-value {
+        #np-widget .np-mini-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #np-widget .np-mini-item {
+            font-size: .7rem;
+            padding: 3px 0;
+            line-height: 1.25;
+        }
+
+        #np-widget .np-mini-item a {
             color: var(--dark-color);
-            font-weight: 500;
-            text-align: right;
+            text-decoration: none;
+            display: block;
+        }
+
+        #np-widget .np-mini-item a:hover {
+            color: var(--primary-color);
+        }
+
+        #np-widget .np-mini-primary {
+            display: block;
+            color: inherit;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        #np-widget .np-detail-value a {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        #np-widget .np-detail-value a:hover {
-            text-decoration: underline;
+        #np-widget .np-mini-secondary {
+            display: block;
+            font-size: .6rem;
+            color: #9ca3af;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         /* skeleton (no-cache fetch) */
@@ -733,19 +757,29 @@
             }
 
             #np-widget .np-details {
+                background: #1f1f23;
+                border-color: rgba(255, 255, 255, .08);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, .3);
+            }
+
+            #np-widget .np-list-section + .np-list-section {
                 border-top-color: rgba(255, 255, 255, .08);
             }
 
-            #np-widget .np-detail-label {
+            #np-widget .np-list-title {
                 color: #71717a;
             }
 
-            #np-widget .np-detail-value {
+            #np-widget .np-mini-item a {
                 color: #f4f4f5;
             }
 
-            #np-widget .np-detail-value a {
+            #np-widget .np-mini-item a:hover {
                 color: var(--primary-color);
+            }
+
+            #np-widget .np-mini-secondary {
+                color: #71717a;
             }
 
             #np-widget .np-sk-line,
@@ -2510,8 +2544,8 @@
             var ROOT = document.getElementById('np-widget');
             if (!ROOT) return;
 
-            var KEY_DATA = 'lastFmData';
-            var KEY_TS = 'lastFmTimestamp';
+            var KEY_DATA = 'lastFmData_v2';
+            var KEY_TS = 'lastFmTimestamp_v2';
             var KEY_EXPANDED = 'lastFmExpanded';
             var TTL = 60000; // 60s — matches the server cache
             var isExpanded = localStorage.getItem(KEY_EXPANDED) === 'true';
@@ -2642,43 +2676,41 @@
             function renderDetails(data) {
                 var html = '<div class="np-details">';
 
-                // album row
-                if (data.album) {
-                    html += '<div class="np-detail-row">' +
-                        '<span class="np-detail-label">Album</span>' +
-                        '<span class="np-detail-value">' + esc(data.album) + '</span>' +
-                        '</div>';
+                // top artists this week
+                var top = (data.top_artists && data.top_artists.length) ? data.top_artists : [];
+                if (top.length) {
+                    html += '<div class="np-list-section">' +
+                        '<span class="np-list-title">Top This Week</span>' +
+                        '<ul class="np-mini-list">';
+                    for (var i = 0; i < top.length; i++) {
+                        html += renderListItem(top[i].name, '', top[i].url);
+                    }
+                    html += '</ul></div>';
                 }
 
-                // artist row
-                if (data.artist) {
-                    var artistValue = data.url
-                        ? '<a href="' + esc(data.url) + '" target="_blank" rel="noopener">' + esc(data.artist) + '</a>'
-                        : esc(data.artist);
-                    html += '<div class="np-detail-row">' +
-                        '<span class="np-detail-label">Artist</span>' +
-                        '<span class="np-detail-value">' + artistValue + '</span>' +
-                        '</div>';
-                }
-
-                // time row
-                if (data.timestamp) {
-                    html += '<div class="np-detail-row">' +
-                        '<span class="np-detail-label">Scrobbled</span>' +
-                        '<span class="np-detail-value">' + esc(formatTime(data.timestamp)) + '</span>' +
-                        '</div>';
-                }
-
-                // last.fm link
-                if (data.url) {
-                    html += '<div class="np-detail-row">' +
-                        '<span class="np-detail-label">View on</span>' +
-                        '<span class="np-detail-value"><a href="' + esc(data.url) + '" target="_blank" rel="noopener">Last.fm →</a></span>' +
-                        '</div>';
+                // recent scrobbles
+                var recent = (data.recent_tracks && data.recent_tracks.length) ? data.recent_tracks : [];
+                if (recent.length) {
+                    html += '<div class="np-list-section">' +
+                        '<span class="np-list-title">Recent Scrobbles</span>' +
+                        '<ul class="np-mini-list">';
+                    for (var j = 0; j < recent.length; j++) {
+                        html += renderListItem(recent[j].name, recent[j].artist, recent[j].url);
+                    }
+                    html += '</ul></div>';
                 }
 
                 html += '</div>';
                 return html;
+            }
+
+            function renderListItem(primary, secondary, url) {
+                var inner = '<span class="np-mini-primary">' + esc(primary || '—') + '</span>' +
+                    (secondary ? '<span class="np-mini-secondary">' + esc(secondary) + '</span>' : '');
+                if (url) {
+                    return '<li class="np-mini-item"><a href="' + esc(url) + '" target="_blank" rel="noopener">' + inner + '</a></li>';
+                }
+                return '<li class="np-mini-item">' + inner + '</li>';
             }
 
             function skeleton() {

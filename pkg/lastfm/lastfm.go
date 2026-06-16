@@ -22,7 +22,7 @@ const (
 	StateOff      = "off"      // no data / missing creds -> widget hides
 
 	cacheTTL    = 60 * time.Second
-	httpTimeout = 5 * time.Second
+	httpTimeout = 10 * time.Second
 )
 
 // NowPlaying is the normalized payload served to the browser. It is flat on
@@ -35,6 +35,24 @@ type NowPlaying struct {
 	ImageURL  string `json:"image_url"` // artwork; "" -> client swaps to SVG
 	URL       string `json:"url"`       // Last.fm page for the track/artist
 	Timestamp int64  `json:"timestamp"` // scrobble unix seconds; 0 when unknown
+
+	// Enrichment lists for the expand panel. omitempty so StateOff and old
+	// cached payloads serialize without them.
+	TopArtists   []ArtistItem `json:"top_artists,omitempty"`
+	RecentTracks []TrackItem  `json:"recent_tracks,omitempty"`
+}
+
+// ArtistItem is a single entry in the weekly top-artists list.
+type ArtistItem struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+}
+
+// TrackItem is a single entry in the recent-scrobbles list.
+type TrackItem struct {
+	Artist string `json:"artist"`
+	Name   string `json:"name"`
+	URL    string `json:"url"`
 }
 
 // --- raw Last.fm response structs (decode only) ---
@@ -135,21 +153,27 @@ func (c *Client) fetchFresh() NowPlaying {
 	}
 
 	// primary: recent tracks (active / idle)
-	if np, ok := c.getRecentTracks(); ok {
+	if np, recent, ok := c.getRecentTracks(); ok {
+		np.RecentTracks = recent
+		// enrich with this week's top artists for the expand panel
+		if _, top, ok2 := c.getTopArtists(); ok2 {
+			np.TopArtists = top
+		}
 		return np
 	}
 
-	// fallback: this week's top artist
-	if np, ok := c.getTopArtist(); ok {
+	// fallback: this week's top artist (list comes from the same response)
+	if np, top, ok := c.getTopArtists(); ok {
+		np.TopArtists = top
 		return np
 	}
 
 	return NowPlaying{State: StateOff}
 }
 
-func (c *Client) getRecentTracks() (NowPlaying, bool) {
+func (c *Client) getRecentTracks() (np NowPlaying, recent []TrackItem, ok bool) {
 	u := fmt.Sprintf(
-		"%s?method=user.getrecenttracks&user=%s&api_key=%s&format=json&limit=1",
+		"%s?method=user.getrecenttracks&user=%s&api_key=%s&format=json&limit=4",
 		BASE_LASTFM_URL,
 		url.QueryEscape(c.username),
 		url.QueryEscape(c.apiKey),
@@ -158,27 +182,43 @@ func (c *Client) getRecentTracks() (NowPlaying, bool) {
 	body, err := c.doGet(u)
 	if err != nil {
 		log.Println("lastfm recenttracks error: ", err)
-		return NowPlaying{}, false
+		return NowPlaying{}, nil, false
 	}
 	if body == nil {
-		return NowPlaying{}, false // non-200 -> fall through to fallback
+		return NowPlaying{}, nil, false // non-200 -> fall through to fallback
 	}
 
 	var raw recentTracksResp
 	if err := json.Unmarshal(body, &raw); err != nil {
 		log.Println("lastfm recenttracks decode error: ", err)
-		return NowPlaying{}, false
+		return NowPlaying{}, nil, false
 	}
 
 	tracks := raw.RecentTracks.Track
 	if len(tracks) == 0 {
-		return NowPlaying{}, false
+		return NowPlaying{}, nil, false
 	}
 
 	t := tracks[0]
 	state := StateIdle
 	if t.Attr.NowPlaying == "true" {
 		state = StateActive
+	}
+
+	// build the recent-scrobbles list from tracks[1:], capped at 3
+	recent = make([]TrackItem, 0, 3)
+	for _, rt := range tracks[1:] {
+		if len(recent) >= 3 {
+			break
+		}
+		if rt.Name == "" {
+			continue
+		}
+		recent = append(recent, TrackItem{
+			Artist: rt.Artist.Text,
+			Name:   rt.Name,
+			URL:    rt.URL,
+		})
 	}
 
 	return NowPlaying{
@@ -189,12 +229,12 @@ func (c *Client) getRecentTracks() (NowPlaying, bool) {
 		ImageURL:  pickImage(t.Image),
 		URL:       t.URL,
 		Timestamp: parseUnix(t.Date.Uts),
-	}, true
+	}, recent, true
 }
 
-func (c *Client) getTopArtist() (NowPlaying, bool) {
+func (c *Client) getTopArtists() (np NowPlaying, top []ArtistItem, ok bool) {
 	u := fmt.Sprintf(
-		"%s?method=user.gettopartists&user=%s&api_key=%s&format=json&limit=1&period=7day",
+		"%s?method=user.gettopartists&user=%s&api_key=%s&format=json&limit=3&period=7day",
 		BASE_LASTFM_URL,
 		url.QueryEscape(c.username),
 		url.QueryEscape(c.apiKey),
@@ -203,21 +243,33 @@ func (c *Client) getTopArtist() (NowPlaying, bool) {
 	body, err := c.doGet(u)
 	if err != nil {
 		log.Println("lastfm topartists error: ", err)
-		return NowPlaying{}, false
+		return NowPlaying{}, nil, false
 	}
 	if body == nil {
-		return NowPlaying{}, false
+		return NowPlaying{}, nil, false
 	}
 
 	var raw topArtistsResp
 	if err := json.Unmarshal(body, &raw); err != nil {
 		log.Println("lastfm topartists decode error: ", err)
-		return NowPlaying{}, false
+		return NowPlaying{}, nil, false
 	}
 
 	artists := raw.TopArtists.Artist
 	if len(artists) == 0 {
-		return NowPlaying{}, false
+		return NowPlaying{}, nil, false
+	}
+
+	// build the top-artists list, capped at 3
+	top = make([]ArtistItem, 0, 3)
+	for _, a := range artists {
+		if len(top) >= 3 {
+			break
+		}
+		if a.Name == "" {
+			continue
+		}
+		top = append(top, ArtistItem{Name: a.Name, URL: a.URL})
 	}
 
 	a := artists[0]
@@ -226,7 +278,7 @@ func (c *Client) getTopArtist() (NowPlaying, bool) {
 		Artist:   a.Name,
 		ImageURL: pickImage(a.Image),
 		URL:      a.URL,
-	}, true
+	}, top, true
 }
 
 // doGet performs a GET and returns the fully-read body. A nil body with a nil
