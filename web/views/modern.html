@@ -409,6 +409,12 @@
             transform: none;
         }
 
+        #np-widget .np-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         #np-widget .np-pill {
             display: flex;
             align-items: center;
@@ -513,6 +519,121 @@
             animation-delay: .4s;
         }
 
+        /* album name (shown when available) */
+        #np-widget .np-album {
+            font-size: .68rem;
+            color: #9ca3af;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            font-style: italic;
+        }
+
+        #np-widget .np-album:empty {
+            display: none;
+        }
+
+        /* time display ("now", "3m ago", "2h ago") */
+        #np-widget .np-time {
+            font-size: .62rem;
+            color: #9ca3af;
+            margin-top: 2px;
+        }
+
+        #np-widget .np-time:empty {
+            display: none;
+        }
+
+        /* expand/collapse button */
+        #np-widget .np-expand {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, .04);
+            color: #6b7280;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all .2s ease;
+        }
+
+        #np-widget .np-expand:hover {
+            background: rgba(0, 0, 0, .08);
+            color: var(--dark-color);
+        }
+
+        #np-widget .np-expand svg {
+            width: 10px;
+            height: 10px;
+            transition: transform .2s ease;
+        }
+
+        #np-widget .np-expanded .np-expand svg {
+            transform: rotate(180deg);
+        }
+
+        /* top artist badge */
+        #np-widget .np-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 6px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border-radius: 9999px;
+            font-size: .58rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-right: 4px;
+        }
+
+        /* expanded details section */
+        #np-widget .np-details {
+            display: flex;
+            flex-direction: column;
+            width: min(86vw, 320px);
+            padding: 10px 14px;
+            margin-top: 6px;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, .06);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+        }
+
+        #np-widget .np-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: .68rem;
+            padding: 4px 0;
+            gap: 8px;
+        }
+
+        #np-widget .np-detail-label {
+            color: #9ca3af;
+            flex-shrink: 0;
+        }
+
+        #np-widget .np-detail-value {
+            color: var(--dark-color);
+            font-weight: 500;
+            text-align: right;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #np-widget .np-detail-value a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        #np-widget .np-detail-value a:hover {
+            text-decoration: underline;
+        }
+
         /* skeleton (no-cache fetch) */
         #np-widget .np-skeleton {
             cursor: default;
@@ -596,6 +717,37 @@
                 background-color: #2a2a30;
             }
 
+            #np-widget .np-album,
+            #np-widget .np-time {
+                color: #71717a;
+            }
+
+            #np-widget .np-expand {
+                background: rgba(255, 255, 255, .06);
+                color: #a1a1aa;
+            }
+
+            #np-widget .np-expand:hover {
+                background: rgba(255, 255, 255, .1);
+                color: #f4f4f5;
+            }
+
+            #np-widget .np-details {
+                border-top-color: rgba(255, 255, 255, .08);
+            }
+
+            #np-widget .np-detail-label {
+                color: #71717a;
+            }
+
+            #np-widget .np-detail-value {
+                color: #f4f4f5;
+            }
+
+            #np-widget .np-detail-value a {
+                color: var(--primary-color);
+            }
+
             #np-widget .np-sk-line,
             #np-widget .np-skeleton .np-art {
                 background: #353539;
@@ -607,7 +759,38 @@
             #np-widget {
                 bottom: 12px;
                 right: 12px;
-                left: 12px;
+                left: auto;
+                max-width: calc(100vw - 24px);
+            }
+
+            #np-widget .np-pill {
+                max-width: none;
+                padding: 8px 12px;
+                gap: 8px;
+            }
+
+            #np-widget .np-art {
+                width: 38px;
+                height: 38px;
+            }
+
+            #np-widget .np-expand {
+                width: 18px;
+                height: 18px;
+            }
+
+            #np-widget .np-expand svg {
+                width: 8px;
+                height: 8px;
+            }
+        }
+
+        /* tablet & desktop - left side option */
+        @media (min-width: 481px) and (max-width: 768px) {
+            #np-widget {
+                bottom: 16px;
+                left: 16px;
+                right: auto;
             }
 
             #np-widget .np-pill {
@@ -2329,7 +2512,11 @@
 
             var KEY_DATA = 'lastFmData';
             var KEY_TS = 'lastFmTimestamp';
+            var KEY_EXPANDED = 'lastFmExpanded';
             var TTL = 60000; // 60s — matches the server cache
+            var isExpanded = localStorage.getItem(KEY_EXPANDED) === 'true';
+            var currentData = null;
+            var currentTopArtistCache = null;
 
             // generic music-note placeholder for missing/broken artwork
             var PLACEHOLDER = "data:image/svg+xml," + encodeURIComponent(
@@ -2339,10 +2526,31 @@
             function show() { ROOT.classList.add('np-visible'); }
             function hide() { ROOT.classList.remove('np-visible'); }
 
+            function toggleExpand() {
+                isExpanded = !isExpanded;
+                localStorage.setItem(KEY_EXPANDED, String(isExpanded));
+                // re-render to show/hide details
+                if (currentData) {
+                    render(currentData, currentTopArtistCache);
+                }
+            }
+
             function esc(s) {
                 return (s == null ? '' : String(s))
                     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
+            // format time ago: "now", "3m ago", "2h ago", "5d ago"
+            function formatTime(timestamp) {
+                if (!timestamp) return '';
+                var now = Math.floor(Date.now() / 1000);
+                var diff = now - timestamp;
+
+                if (diff < 60) return 'now';
+                if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+                if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+                return Math.floor(diff / 86400) + 'd ago';
             }
 
             // swap any <img> that fails to load for the placeholder and suppress the icon
@@ -2356,7 +2564,11 @@
                 }
             }
 
-            function render(data) {
+            function render(data, topArtistCache) {
+                // store for toggleExpand
+                currentData = data;
+                currentTopArtistCache = topArtistCache;
+
                 if (!data || !data.state || data.state === 'off') {
                     ROOT.innerHTML = '';
                     hide();
@@ -2376,33 +2588,97 @@
 
                 var title = data.state === 'fallback' ? data.artist : data.track;
                 var subtitle = data.state === 'fallback' ? '' : data.artist;
+                var album = data.album || '';
+                var timeStr = formatTime(data.timestamp);
                 var eqHtml = data.state === 'active'
                     ? '<span class="np-eq"><span></span><span></span><span></span></span>'
                     : '';
                 var imgSrc = data.image_url ? data.image_url : PLACEHOLDER;
 
-                var openTag, closeTag;
-                if (data.url) {
-                    openTag = '<a class="np-pill" href="' + esc(data.url) + '" target="_blank" rel="noopener">';
-                    closeTag = '</a>';
-                } else {
-                    openTag = '<div class="np-pill">';
-                    closeTag = '</div>';
-                }
+                // expose toggleExpand to global scope for onclick
+                window.__np_toggleExpand = toggleExpand;
 
-                ROOT.innerHTML =
-                    openTag +
+                // link wraps only the content, NOT the expand button
+                var pillInner =
                     '<img class="' + artClass + '" src="' + esc(imgSrc) + '" alt="" referrerpolicy="no-referrer">' +
                     '<span class="np-meta">' +
                         '<span class="np-status">' + statusHtml + esc(label) + '</span>' +
                         '<span class="np-track">' + esc(title || '—') + '</span>' +
                         '<span class="np-artist">' + esc(subtitle || '') + '</span>' +
+                        (album ? '<span class="np-album">' + esc(album) + '</span>' : '') +
+                        (timeStr ? '<span class="np-time">' + esc(timeStr) + '</span>' : '') +
                     '</span>' +
-                    eqHtml +
-                    closeTag;
+                    eqHtml;
+
+                var linkTag;
+                if (data.url) {
+                    linkTag = '<a class="np-pill" href="' + esc(data.url) + '" target="_blank" rel="noopener">' + pillInner + '</a>';
+                } else {
+                    linkTag = '<div class="np-pill">' + pillInner + '</div>';
+                }
+
+                // expand button is OUTSIDE the link
+                var expandBtn = '<button class="np-expand" onclick="window.__np_toggleExpand(); return false;" aria-label="Toggle details">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 12"></polyline></svg>' +
+                    '</button>';
+
+                ROOT.innerHTML =
+                    '<div class="np-row">' +
+                        linkTag +
+                        expandBtn +
+                    '</div>' +
+                    (isExpanded ? renderDetails(data) : '');
 
                 bindImgs();
+                // apply expanded state class
+                if (isExpanded) {
+                    ROOT.classList.add('np-expanded');
+                } else {
+                    ROOT.classList.remove('np-expanded');
+                }
                 show();
+            }
+
+            function renderDetails(data) {
+                var html = '<div class="np-details">';
+
+                // album row
+                if (data.album) {
+                    html += '<div class="np-detail-row">' +
+                        '<span class="np-detail-label">Album</span>' +
+                        '<span class="np-detail-value">' + esc(data.album) + '</span>' +
+                        '</div>';
+                }
+
+                // artist row
+                if (data.artist) {
+                    var artistValue = data.url
+                        ? '<a href="' + esc(data.url) + '" target="_blank" rel="noopener">' + esc(data.artist) + '</a>'
+                        : esc(data.artist);
+                    html += '<div class="np-detail-row">' +
+                        '<span class="np-detail-label">Artist</span>' +
+                        '<span class="np-detail-value">' + artistValue + '</span>' +
+                        '</div>';
+                }
+
+                // time row
+                if (data.timestamp) {
+                    html += '<div class="np-detail-row">' +
+                        '<span class="np-detail-label">Scrobbled</span>' +
+                        '<span class="np-detail-value">' + esc(formatTime(data.timestamp)) + '</span>' +
+                        '</div>';
+                }
+
+                // last.fm link
+                if (data.url) {
+                    html += '<div class="np-detail-row">' +
+                        '<span class="np-detail-label">View on</span>' +
+                        '<span class="np-detail-value"><a href="' + esc(data.url) + '" target="_blank" rel="noopener">Last.fm →</a></span>' +
+                        '</div>';
+                }
+
+                html += '</div>';
+                return html;
             }
 
             function skeleton() {
@@ -2428,10 +2704,26 @@
                 }
             }
 
+            // separate cache for top artist (for the badge)
+            function readTopArtistCache() {
+                try {
+                    var raw = localStorage.getItem('lastFmTopArtist');
+                    if (!raw) return null;
+                    return JSON.parse(raw);
+                } catch (e) {
+                    return null;
+                }
+            }
+
             function writeCache(data) {
                 try {
                     localStorage.setItem(KEY_DATA, JSON.stringify(data));
                     localStorage.setItem(KEY_TS, String(Date.now()));
+
+                    // cache top artist separately for badge
+                    if (data && (data.state === 'active' || data.state === 'idle') && data.artist) {
+                        localStorage.setItem('lastFmTopArtist', JSON.stringify({artist: data.artist}));
+                    }
                 } catch (e) { /* quota / private mode -> ignore */ }
             }
 
@@ -2444,8 +2736,9 @@
                             hide();
                             return;
                         }
-                        writeCache(j);
-                        render(j);
+                        writeCache(j); // write first to populate top artist cache
+                        var topArtistCache = readTopArtistCache(); // then read for badge
+                        render(j, topArtistCache);
                     })
                     .catch(function () { // adblock / network / blocked -> hide silently
                         ROOT.innerHTML = '';
@@ -2456,10 +2749,11 @@
             // SWR — runs exactly once on load. No polling, no intervals (Cloud Run
             // scale-to-zero friendly: nothing keeps the instance warm).
             var cached = readCache();
+            var topArtistCache = readTopArtistCache();
             if (cached && cached.age < TTL) {
-                render(cached.data);          // fresh: instant render, no request
+                render(cached.data, topArtistCache);          // fresh: instant render, no request
             } else if (cached) {
-                render(cached.data);          // stale: render instantly, revalidate in background
+                render(cached.data, topArtistCache);          // stale: render instantly, revalidate in background
                 fetchNow();
             } else {
                 skeleton();                   // no cache: skeleton + single fetch
