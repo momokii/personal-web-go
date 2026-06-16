@@ -17,6 +17,7 @@ import (
 	"github.com/gofiber/template/html/v2"
 	"github.com/momokii/go-llmbridge/pkg/openai"
 	"github.com/momokii/personal-web-go/internal/handlers"
+	"github.com/momokii/personal-web-go/pkg/lastfm"
 	"github.com/momokii/personal-web-go/pkg/monitoring"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -40,8 +41,11 @@ func main() {
 		log.Println("OpenAI client created")
 	}
 
+	// lastfm client (never errors on missing creds; widget simply stays hidden)
+	lastfmClient := lastfm.New(os.Getenv("LASTFM_API_KEY"), os.Getenv("LASTFM_USERNAME"))
+
 	// handler init
-	dashboardHandler := handlers.NewDashboardHandler(openaiClient)
+	dashboardHandler := handlers.NewDashboardHandler(openaiClient, lastfmClient)
 
 	// setup prometheus server
 	promReg := prometheus.NewRegistry()
@@ -77,6 +81,7 @@ func main() {
 
 	app.Get("/", dashboardHandler.DashboardView)
 	app.Post("/api/bot", dashboardHandler.ChatBotMessages)
+	app.Get("/api/nowplaying", dashboardHandler.NowPlaying)
 
 	// setup paralel port for app and prometheus exporter
 	// gracefull shutdown

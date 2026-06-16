@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/momokii/go-llmbridge/pkg/openai"
+	"github.com/momokii/personal-web-go/pkg/lastfm"
 	"github.com/momokii/personal-web-go/pkg/medium"
 	"github.com/momokii/personal-web-go/pkg/utils"
 )
@@ -13,14 +14,25 @@ type BotMessagesReq struct {
 
 type dashboardHandler struct {
 	openaiClient openai.OpenAI
+	lastfm       *lastfm.Client
 }
 
 func NewDashboardHandler(
 	openaiClient openai.OpenAI,
+	lastfmClient *lastfm.Client,
 ) *dashboardHandler {
 	return &dashboardHandler{
 		openaiClient: openaiClient,
+		lastfm:       lastfmClient,
 	}
+}
+
+// NowPlaying serves the normalized Last.fm state for the "Now Listening"
+// widget. It always returns 200; the `state` field carries any degradation
+// (e.g. "off" when unconfigured or upstream fails) so the client can hide the
+// widget gracefully.
+func (h *dashboardHandler) NowPlaying(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusOK).JSON(h.lastfm.NowPlaying())
 }
 
 func (h *dashboardHandler) DashboardView(c *fiber.Ctx) error {

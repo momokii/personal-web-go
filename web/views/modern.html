@@ -389,6 +389,231 @@
         #chat-assistant {
             scroll-margin-top: 100px;
         }
+
+        /* ===== Now Listening widget (Last.fm) — scoped to #np-widget ===== */
+        #np-widget {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            z-index: 45;
+            font-family: 'Inter', sans-serif;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(8px);
+            transition: opacity .3s ease, transform .3s ease, visibility .3s;
+        }
+
+        #np-widget.np-visible {
+            opacity: 1;
+            visibility: visible;
+            transform: none;
+        }
+
+        #np-widget .np-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: min(86vw, 320px);
+            padding: 8px 16px 8px 8px;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, .06);
+            border-radius: 9999px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .14);
+            text-decoration: none;
+            color: var(--dark-color);
+            cursor: pointer;
+        }
+
+        #np-widget .np-art {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            display: block;
+            background-color: #eceef1;
+        }
+
+        #np-widget .np-art-idle {
+            filter: grayscale(1) opacity(.82);
+        }
+
+        #np-widget .np-meta {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            line-height: 1.25;
+        }
+
+        #np-widget .np-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: .66rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            color: #6b7280;
+        }
+
+        #np-widget .np-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            animation: np-dot-pulse 1.6s infinite;
+        }
+
+        #np-widget .np-track {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        #np-widget .np-artist {
+            font-size: .72rem;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        #np-widget .np-artist:empty {
+            display: none;
+        }
+
+        /* equalizer (active state only) */
+        #np-widget .np-eq {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 16px;
+            margin-left: 2px;
+            flex-shrink: 0;
+        }
+
+        #np-widget .np-eq span {
+            width: 3px;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--accent-color);
+            animation: np-eq-bounce .9s ease-in-out infinite;
+        }
+
+        #np-widget .np-eq span:nth-child(2) {
+            animation-delay: .2s;
+        }
+
+        #np-widget .np-eq span:nth-child(3) {
+            animation-delay: .4s;
+        }
+
+        /* skeleton (no-cache fetch) */
+        #np-widget .np-skeleton {
+            cursor: default;
+        }
+
+        #np-widget .np-sk-line {
+            display: block;
+            border-radius: 6px;
+            background: #e5e7eb;
+            animation: np-pulse 1.2s ease-in-out infinite;
+        }
+
+        #np-widget .np-sk-wide {
+            width: 130px;
+            height: 10px;
+            margin-bottom: 6px;
+        }
+
+        #np-widget .np-sk-thin {
+            width: 90px;
+            height: 8px;
+        }
+
+        #np-widget .np-skeleton .np-art {
+            background-color: #e5e7eb;
+            animation: np-pulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes np-dot-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(66, 190, 101, .5);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(66, 190, 101, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(66, 190, 101, 0);
+            }
+        }
+
+        @keyframes np-eq-bounce {
+            0%, 100% {
+                height: 4px;
+            }
+
+            50% {
+                height: 14px;
+            }
+        }
+
+        @keyframes np-pulse {
+            0%, 100% {
+                opacity: .5;
+            }
+
+            50% {
+                opacity: .9;
+            }
+        }
+
+        /* dark mode — the widget themes itself; the rest of the page stays light */
+        @media (prefers-color-scheme: dark) {
+            #np-widget .np-pill {
+                background: #1f1f23;
+                border-color: rgba(255, 255, 255, .08);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+            }
+
+            #np-widget .np-track {
+                color: #f4f4f5;
+            }
+
+            #np-widget .np-status,
+            #np-widget .np-artist {
+                color: #a1a1aa;
+            }
+
+            #np-widget .np-art {
+                background-color: #2a2a30;
+            }
+
+            #np-widget .np-sk-line,
+            #np-widget .np-skeleton .np-art {
+                background: #353539;
+            }
+        }
+
+        /* mobile */
+        @media (max-width: 480px) {
+            #np-widget {
+                bottom: 12px;
+                right: 12px;
+                left: 12px;
+            }
+
+            #np-widget .np-pill {
+                max-width: 100%;
+            }
+        }
     </style>
 
     <!-- Google tag (gtag.js) -->
@@ -1786,6 +2011,9 @@
         </div>
     </footer>
 
+    <!-- Now Listening widget (Last.fm) — populated by the script below -->
+    <div id="np-widget" role="complementary" aria-label="Now playing"></div>
+
     <!-- JavaScript -->
     <script>
         $(document).ready(async function() {
@@ -2090,6 +2318,154 @@
                 chatForm.submit();
             });
         });
+    </script>
+
+    <!-- Now Listening widget — SWR cache, single fetch on load, graceful degradation -->
+    <script>
+        (function () {
+            "use strict";
+            var ROOT = document.getElementById('np-widget');
+            if (!ROOT) return;
+
+            var KEY_DATA = 'lastFmData';
+            var KEY_TS = 'lastFmTimestamp';
+            var TTL = 60000; // 60s — matches the server cache
+
+            // generic music-note placeholder for missing/broken artwork
+            var PLACEHOLDER = "data:image/svg+xml," + encodeURIComponent(
+                "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='#9ca3af'><path d='M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z'/></svg>"
+            );
+
+            function show() { ROOT.classList.add('np-visible'); }
+            function hide() { ROOT.classList.remove('np-visible'); }
+
+            function esc(s) {
+                return (s == null ? '' : String(s))
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
+            // swap any <img> that fails to load for the placeholder and suppress the icon
+            function bindImgs() {
+                var imgs = ROOT.querySelectorAll('img');
+                for (var i = 0; i < imgs.length; i++) {
+                    imgs[i].onerror = function () {
+                        this.onerror = null;
+                        this.src = PLACEHOLDER;
+                    };
+                }
+            }
+
+            function render(data) {
+                if (!data || !data.state || data.state === 'off') {
+                    ROOT.innerHTML = '';
+                    hide();
+                    return;
+                }
+
+                var label, artClass = 'np-art', statusHtml = '';
+                if (data.state === 'active') {
+                    label = 'Now Listening';
+                    statusHtml = '<span class="np-dot"></span>';
+                } else if (data.state === 'idle') {
+                    label = 'Recently Played';
+                    artClass = 'np-art np-art-idle';
+                } else { // fallback
+                    label = "This Week's Top Artist";
+                }
+
+                var title = data.state === 'fallback' ? data.artist : data.track;
+                var subtitle = data.state === 'fallback' ? '' : data.artist;
+                var eqHtml = data.state === 'active'
+                    ? '<span class="np-eq"><span></span><span></span><span></span></span>'
+                    : '';
+                var imgSrc = data.image_url ? data.image_url : PLACEHOLDER;
+
+                var openTag, closeTag;
+                if (data.url) {
+                    openTag = '<a class="np-pill" href="' + esc(data.url) + '" target="_blank" rel="noopener">';
+                    closeTag = '</a>';
+                } else {
+                    openTag = '<div class="np-pill">';
+                    closeTag = '</div>';
+                }
+
+                ROOT.innerHTML =
+                    openTag +
+                    '<img class="' + artClass + '" src="' + esc(imgSrc) + '" alt="" referrerpolicy="no-referrer">' +
+                    '<span class="np-meta">' +
+                        '<span class="np-status">' + statusHtml + esc(label) + '</span>' +
+                        '<span class="np-track">' + esc(title || '—') + '</span>' +
+                        '<span class="np-artist">' + esc(subtitle || '') + '</span>' +
+                    '</span>' +
+                    eqHtml +
+                    closeTag;
+
+                bindImgs();
+                show();
+            }
+
+            function skeleton() {
+                ROOT.innerHTML =
+                    '<div class="np-pill np-skeleton">' +
+                        '<span class="np-art"></span>' +
+                        '<span class="np-meta">' +
+                            '<span class="np-sk-line np-sk-wide"></span>' +
+                            '<span class="np-sk-line np-sk-thin"></span>' +
+                        '</span>' +
+                    '</div>';
+                show();
+            }
+
+            function readCache() {
+                try {
+                    var ts = parseInt(localStorage.getItem(KEY_TS) || '0', 10);
+                    var raw = localStorage.getItem(KEY_DATA);
+                    if (!raw || !ts) return null;
+                    return { data: JSON.parse(raw), age: Date.now() - ts };
+                } catch (e) {
+                    return null; // private mode / bad JSON -> treat as no cache
+                }
+            }
+
+            function writeCache(data) {
+                try {
+                    localStorage.setItem(KEY_DATA, JSON.stringify(data));
+                    localStorage.setItem(KEY_TS, String(Date.now()));
+                } catch (e) { /* quota / private mode -> ignore */ }
+            }
+
+            function fetchNow() {
+                fetch('/api/nowplaying', { cache: 'no-store' })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (j) {
+                        if (!j || !j.state || j.state === 'off') {
+                            ROOT.innerHTML = '';
+                            hide();
+                            return;
+                        }
+                        writeCache(j);
+                        render(j);
+                    })
+                    .catch(function () { // adblock / network / blocked -> hide silently
+                        ROOT.innerHTML = '';
+                        hide();
+                    });
+            }
+
+            // SWR — runs exactly once on load. No polling, no intervals (Cloud Run
+            // scale-to-zero friendly: nothing keeps the instance warm).
+            var cached = readCache();
+            if (cached && cached.age < TTL) {
+                render(cached.data);          // fresh: instant render, no request
+            } else if (cached) {
+                render(cached.data);          // stale: render instantly, revalidate in background
+                fetchNow();
+            } else {
+                skeleton();                   // no cache: skeleton + single fetch
+                fetchNow();
+            }
+        })();
     </script>
 </body>
 
